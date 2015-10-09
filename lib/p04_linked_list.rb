@@ -1,8 +1,8 @@
 class Link
-  attr_accessor :key, :val, :next
+  attr_accessor :key, :val, :next, :prev
 
-  def initialize(key = nil, val = nil, nxt = nil)
-    @key, @val, @next = key, val, nxt
+  def initialize(key = nil, val = nil, nxt = nil, prev = nil)
+    @key, @val, @next, @prev = key, val, nxt, prev
   end
 
   def to_s
@@ -12,10 +12,11 @@ end
 
 class LinkedList
   include Enumerable
-  attr_reader :head
+  attr_reader :head, :tail
 
   def initialize
     @head = Link.new
+    @tail = @head
   end
 
   def [](i)
@@ -28,12 +29,7 @@ class LinkedList
   end
 
   def last
-    link = @head
-    until link.next == nil
-      link = link.next
-    end
-
-    link
+    @tail
   end
 
   def empty?
@@ -69,7 +65,15 @@ class LinkedList
   def insert(key, val)
     new_link = Link.new(key, val)
 
-    self.empty? ? @head = new_link : self.last.next = new_link
+    if self.empty?
+      @head = new_link
+      @tail = new_link
+    else
+      @tail.next = new_link
+      new_link.prev = tail
+      @tail = new_link
+    end
+
   end
 
   def remove(key)
@@ -78,7 +82,18 @@ class LinkedList
 
     until link.nil?
       if link.key == key
-        link == @head ? @head = link.next : last_link.next = link.next
+        if link == @head
+          @head = link.next
+          if @head.nil?
+            @head = Link.new
+            @tail = @head
+          else
+            @head.prev = nil
+          end
+        else
+          last_link.next = link.next
+          link.next.prev = last_link unless link.next.nil?
+        end
         return
       end
 
@@ -88,8 +103,9 @@ class LinkedList
   end
 
   def each(&prc)
-    link = @head
+    return if empty?
 
+    link = @head
     until link.nil?
       prc.call(link)
       link = link.next
